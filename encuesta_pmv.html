@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encuesta PMV — Sistema de Gestión de Obras</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F0E8;
+    --card: #FFFCF7;
+    --accent: #1A3A2A;
+    --accent2: #D4A853;
+    --text: #1C1C1C;
+    --muted: #7A7A72;
+    --border: #E2DAC8;
+    --selected: #1A3A2A;
+    --selected-text: #FFFCF7;
+    --error: #C0392B;
+    --success: #2E7D52;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); min-height: 100vh; padding: 0 0 80px; }
+
+  .hero { background: var(--accent); color: var(--card); padding: 56px 32px 48px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -60px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(212,168,83,0.15); }
+  .hero::after { content: ''; position: absolute; bottom: -40px; left: 40px; width: 150px; height: 150px; border-radius: 50%; background: rgba(212,168,83,0.08); }
+  .hero-tag { display: inline-block; background: var(--accent2); color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 5px 12px; border-radius: 2px; margin-bottom: 20px; }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(28px, 6vw, 42px); line-height: 1.15; margin-bottom: 16px; max-width: 520px; }
+  .hero p { font-size: 15px; line-height: 1.65; color: rgba(255,252,247,0.75); max-width: 480px; }
+  .hero-meta { margin-top: 28px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .hero-meta span { font-size: 12px; color: rgba(255,252,247,0.55); display: flex; align-items: center; gap: 6px; }
+  .hero-meta .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); display: inline-block; }
+
+  .progress-wrap { background: var(--card); padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 16px; }
+  .progress-bar-bg { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+  .progress-label { font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+
+  .section-label { max-width: 680px; margin: 0 auto; padding: 40px 24px 0; }
+  .section-label h2 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+  .section-label h2 .num { background: var(--accent2); color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .section-label p { font-size: 13px; color: var(--muted); margin-top: 6px; padding-left: 36px; }
+
+  .card { max-width: 680px; margin: 20px auto 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; position: relative; transition: box-shadow 0.2s; }
+  .card:hover { box-shadow: 0 4px 24px rgba(26,58,42,0.08); }
+  .card.answered { border-color: rgba(26,58,42,0.35); }
+  .card .q-num { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .card .q-text { font-size: 16px; font-weight: 500; line-height: 1.5; margin-bottom: 20px; }
+  .card .q-sub { font-size: 13px; color: var(--muted); margin-top: -12px; margin-bottom: 18px; font-style: italic; }
+  .required-star { color: var(--accent2); margin-left: 3px; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.15s; user-select: none; font-size: 14px; }
+  .option:hover { border-color: var(--accent); background: rgba(26,58,42,0.03); }
+  .option.selected { border-color: var(--selected); background: var(--selected); color: var(--selected-text); }
+  .option input { display: none; }
+  .option .check { width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .option.checkbox .check { border-radius: 4px; }
+  .option.selected .check::after { content: '✓'; font-size: 11px; font-weight: 700; }
+
+  .scale-wrap { display: flex; flex-direction: column; gap: 12px; }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .scale-btns { display: flex; gap: 8px; }
+  .scale-btn { flex: 1; aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 8px; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--text); }
+  .scale-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .scale-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--card); }
+
+  .open-text { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: transparent; resize: vertical; min-height: 100px; line-height: 1.6; transition: border-color 0.2s; outline: none; }
+  .open-text:focus { border-color: var(--accent); }
+  .open-text::placeholder { color: var(--muted); }
+
+  .submit-wrap { max-width: 680px; margin: 32px auto 0; padding: 0 24px; }
+  .submit-btn { width: 100%; padding: 18px; background: var(--accent); color: var(--card); border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; }
+  .submit-btn:hover { background: #243f2f; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,58,42,0.3); }
+  .error-msg { background: #FFF0EE; border: 1px solid #F5C6C0; color: var(--error); border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-top: 12px; display: none; }
+
+  .thankyou { display: none; max-width: 680px; margin: 48px auto; text-align: center; padding: 0 24px 60px; }
+  .thankyou .icon { width: 72px; height: 72px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 32px; }
+  .thankyou h2 { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--accent); margin-bottom: 12px; }
+  .thankyou > p { color: var(--muted); font-size: 15px; line-height: 1.65; }
+
+  .form-body { transition: opacity 0.3s; }
+  .card { margin-left: 24px; margin-right: 24px; }
+  @media (min-width: 728px) { .card { margin-left: auto; margin-right: auto; } }
+
+  /* RESULTS */
+  .results-section { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .chart-card.wide { grid-column: 1 / -1; }
+  .results-divider { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--accent); grid-column: 1 / -1; margin-top: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .chart-label { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  .gauge-wrap { display: flex; justify-content: center; }
+  .gauge-svg { width: 100%; max-width: 180px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; flex-direction: column; gap: 4px; }
+  .bar-row-label { font-size: 12px; color: var(--text); font-weight: 500; }
+  .bar-bg { background: var(--border); border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; width: 0%; transition: width 1s ease; }
+  .pill-result { display: inline-block; padding: 10px 20px; border-radius: 100px; font-size: 15px; font-weight: 600; margin-top: 4px; }
+  .pill-green { background: #D6EFE0; color: #1A5C35; }
+  .pill-yellow { background: #FDF3D8; color: #8A6200; }
+  .pill-gray { background: #EEEEE8; color: #555; }
+  .suggestion-text { font-size: 14px; color: var(--text); line-height: 1.65; font-style: italic; background: var(--bg); border-radius: 8px; padding: 14px 16px; border-left: 3px solid var(--accent2); margin-top: 4px; }
+  @media (max-width: 480px) { .results-section { grid-template-columns: 1fr; } .chart-card.wide { grid-column: 1; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">Duoc UC · Herramientas para el Emprendimiento</div>
+  <h1>Validación de Nuestra Propuesta de Valor</h1>
+  <p>Sistema digital de gestión con monitoreo en tiempo real para obras de construcción. Tu opinión nos ayuda a validar si esta solución responde a una necesidad real.</p>
+  <div class="hero-meta">
+    <span><span class="dot"></span>7 preguntas</span>
+    <span><span class="dot"></span>~3 minutos</span>
+    <span><span class="dot"></span>Anónimo</span>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 7</div>
+</div>
+
+<div class="form-body" id="formBody">
+
+  <div class="section-label">
+    <h2><span class="num">1</span>El Problema</h2>
+    <p>Queremos entender qué tan real es el problema que identificamos.</p>
+  </div>
+
+  <div class="card" id="card-1">
+    <div class="q-num">Pregunta 01</div>
+    <div class="q-text">¿Trabajas o has trabajado en el área de construcción, o conoces a alguien que lo haga?<span class="required-star">*</span></div>
+    <div class="options" data-q="1" data-type="radio">
+      <label class="option"><input type="radio" name="q1" value="Sí, trabajo o trabajé en construcción"><span class="check"></span>Sí, trabajo o trabajé en construcción</label>
+      <label class="option"><input type="radio" name="q1" value="Conozco a alguien del rubro"><span class="check"></span>Conozco a alguien del rubro</label>
+      <label class="option"><input type="radio" name="q1" value="No tengo vínculo con el área"><span class="check"></span>No tengo vínculo con el área</label>
+    </div>
+  </div>
+
+  <div class="card" id="card-2">
+    <div class="q-num">Pregunta 02</div>
+    <div class="q-text">En obras de construcción, ¿qué tan frecuente crees que es el problema de detectar tarde los atrasos?<span class="required-star">*</span></div>
+    <div class="q-sub">Considera atrasos en materiales, mano de obra o coordinación de partidas.</div>
+    <div class="scale-wrap">
+      <div class="scale-labels"><span>Poco frecuente</span><span>Muy frecuente</span></div>
+      <div class="scale-btns" data-q="2" data-type="scale">
+        <button class="scale-btn" data-val="1">1</button>
+        <button class="scale-btn" data-val="2">2</button>
+        <button class="scale-btn" data-val="3">3</button>
+        <button class="scale-btn" data-val="4">4</button>
+        <button class="scale-btn" data-val="5">5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-3">
+    <div class="q-num">Pregunta 03</div>
+    <div class="q-text">¿Crees que la falta de información en tiempo real es una causa importante de los retrasos en obras?<span class="required-star">*</span></div>
+    <div class="options" data-q="3" data-type="radio">
+      <label class="option"><input type="radio" name="q3" value="Totalmente de acuerdo"><span class="check"></span>Totalmente de acuerdo</label>
+      <label class="option"><input type="radio" name="q3" value="De acuerdo"><span class="check"></span>De acuerdo</label>
+      <label class="option"><input type="radio" name="q3" value="Neutral"><span class="check"></span>Neutral</label>
+      <label class="option"><input type="radio" name="q3" value="En desacuerdo"><span class="check"></span>En desacuerdo</label>
+    </div>
+  </div>
+
+  <div class="section-label">
+    <h2><span class="num">2</span>Nuestra Solución</h2>
+    <p>Evalúa si nuestra propuesta te parece útil y atractiva.</p>
+  </div>
+
+  <div class="card" id="card-4">
+    <div class="q-num">Pregunta 04</div>
+    <div class="q-text">Nuestra solución: un formulario móvil que los jefes de partida completan diariamente desde su celular, reflejándose en un tablero visual en la oficina. ¿Qué tan útil te parece?<span class="required-star">*</span></div>
+    <div class="scale-wrap">
+      <div class="scale-labels"><span>Nada útil</span><span>Muy útil</span></div>
+      <div class="scale-btns" data-q="4" data-type="scale">
+        <button class="scale-btn" data-val="1">1</button>
+        <button class="scale-btn" data-val="2">2</button>
+        <button class="scale-btn" data-val="3">3</button>
+        <button class="scale-btn" data-val="4">4</button>
+        <button class="scale-btn" data-val="5">5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-5">
+    <div class="q-num">Pregunta 05</div>
+    <div class="q-text">¿Usarías o recomendarías este sistema si trabajaras en una obra?<span class="required-star">*</span></div>
+    <div class="options" data-q="5" data-type="radio">
+      <label class="option"><input type="radio" name="q5" value="Definitivamente sí"><span class="check"></span>Definitivamente sí</label>
+      <label class="option"><input type="radio" name="q5" value="Probablemente sí"><span class="check"></span>Probablemente sí</label>
+      <label class="option"><input type="radio" name="q5" value="No sé"><span class="check"></span>No sé</label>
+      <label class="option"><input type="radio" name="q5" value="Probablemente no"><span class="check"></span>Probablemente no</label>
+    </div>
+  </div>
+
+  <div class="card" id="card-6">
+    <div class="q-num">Pregunta 06</div>
+    <div class="q-text">¿Qué aspecto de la solución te parece más valioso? <span style="color:var(--muted);font-weight:400;font-size:13px;">(puedes elegir más de uno)</span><span class="required-star">*</span></div>
+    <div class="options" data-q="6" data-type="checkbox">
+      <div class="option checkbox" data-val="Monitoreo en tiempo real"><span class="check"></span>Monitoreo en tiempo real</div>
+      <div class="option checkbox" data-val="Uso desde celular"><span class="check"></span>Uso desde el celular (sin ir a la oficina)</div>
+      <div class="option checkbox" data-val="Tablero visual centralizado"><span class="check"></span>Tablero visual centralizado</div>
+      <div class="option checkbox" data-val="Detección temprana de problemas"><span class="check"></span>Detección temprana de problemas</div>
+      <div class="option checkbox" data-val="Otro"><span class="check"></span>Otro</div>
+    </div>
+  </div>
+
+  <div class="card" id="card-7">
+    <div class="q-num">Pregunta 07</div>
+    <div class="q-text">¿Qué mejorarías o agregarías a esta solución?</div>
+    <textarea class="open-text" data-q="7" data-type="open" placeholder="Escribe tu sugerencia aquí…"></textarea>
+  </div>
+
+  <div class="submit-wrap">
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">Enviar respuestas →</button>
+    <div class="error-msg" id="errorMsg">Por favor responde todas las preguntas obligatorias antes de enviar.</div>
+  </div>
+
+</div>
+
+<!-- THANK YOU + CHARTS -->
+<div class="thankyou" id="thankyou">
+  <div class="icon">✓</div>
+  <h2>¡Gracias por tu respuesta!</h2>
+  <p>Tu opinión es clave para validar nuestro PMV. El equipo <strong>Sandro, Marco, Jerson, Ian, Carlos y Matías</strong> te lo agradece.</p>
+
+  <div class="results-section">
+    <div class="results-divider">Tus respuestas de un vistazo</div>
+
+    <!-- Gauge Q2 -->
+    <div class="chart-card">
+      <div class="chart-label">P2 · Frecuencia del problema</div>
+      <div class="chart-sub">Escala 1 – 5</div>
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 200 110" class="gauge-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#E2DAC8" stroke-width="18" stroke-linecap="round"/>
+          <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#1A3A2A" stroke-width="18" stroke-linecap="round"
+            stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gaugeFillQ2" style="transition:stroke-dashoffset 1.2s ease 0.4s"/>
+          <text x="100" y="90" text-anchor="middle" font-family="serif" font-size="36" fill="#1A3A2A" id="gaugeValQ2">–</text>
+          <text x="100" y="108" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#7A7A72">de 5</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Gauge Q4 -->
+    <div class="chart-card">
+      <div class="chart-label">P4 · Utilidad del PMV</div>
+      <div class="chart-sub">Escala 1 – 5</div>
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 200 110" class="gauge-svg">
+          <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#E2DAC8" stroke-width="18" stroke-linecap="round"/>
+          <path d="M20,100 A80,80 0 0,1 180,100" fill="none" stroke="#D4A853" stroke-width="18" stroke-linecap="round"
+            stroke-dasharray="251.2" stroke-dashoffset="251.2" id="gaugeFillQ4" style="transition:stroke-dashoffset 1.2s ease 0.6s"/>
+          <text x="100" y="90" text-anchor="middle" font-family="serif" font-size="36" fill="#1A3A2A" id="gaugeValQ4">–</text>
+          <text x="100" y="108" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#7A7A72">de 5</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Bar Q6 -->
+    <div class="chart-card wide">
+      <div class="chart-label">P6 · Aspectos más valiosos que seleccionaste</div>
+      <div class="chart-sub">Los marcados en verde son los que elegiste</div>
+      <div class="bar-chart" id="barChartQ6"></div>
+    </div>
+
+    <!-- Pill Q5 -->
+    <div class="chart-card wide">
+      <div class="chart-label">P5 · ¿Lo usarías o recomendarías?</div>
+      <div class="chart-sub">Tu respuesta</div>
+      <div class="pill-result pill-gray" id="pillQ5"></div>
+    </div>
+
+    <!-- Q7 sugerencia -->
+    <div class="chart-card wide" id="q7card" style="display:none">
+      <div class="chart-label">P7 · Tu sugerencia</div>
+      <div class="suggestion-text" id="suggestionText"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const answers = {};
+  const totalRequired = 6;
+
+  document.querySelectorAll('.options[data-type="radio"] .option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const group = opt.closest('.options');
+      const q = group.dataset.q;
+      group.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      answers[q] = opt.querySelector('input').value;
+      document.getElementById('card-' + q).classList.add('answered');
+      updateProgress();
+    });
+  });
+
+  document.querySelectorAll('.options[data-type="checkbox"] .option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const group = opt.closest('.options');
+      const q = group.dataset.q;
+      opt.classList.toggle('selected');
+      const selected = [...group.querySelectorAll('.option.selected')].map(o => o.dataset.val);
+      answers[q] = selected;
+      document.getElementById('card-' + q).classList.toggle('answered', selected.length > 0);
+      updateProgress();
+    });
+  });
+
+  document.querySelectorAll('.scale-btns').forEach(group => {
+    group.querySelectorAll('.scale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = group.dataset.q;
+        group.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        answers[q] = btn.dataset.val;
+        document.getElementById('card-' + q).classList.add('answered');
+        updateProgress();
+      });
+    });
+  });
+
+  document.querySelectorAll('.open-text').forEach(ta => {
+    ta.addEventListener('input', () => { answers[ta.dataset.q] = ta.value; });
+  });
+
+  function updateProgress() {
+    const filled = [1,2,3,4,5,6].filter(q => {
+      const a = answers[q];
+      return a !== undefined && (Array.isArray(a) ? a.length > 0 : a !== '');
+    }).length;
+    document.getElementById('progressBar').style.width = (filled / totalRequired * 100) + '%';
+    document.getElementById('progressLabel').textContent = filled + ' / 7';
+  }
+
+  function renderCharts() {
+    // Gauges
+    const total = 251.2;
+    const v2 = parseInt(answers[2]) || 0;
+    const v4 = parseInt(answers[4]) || 0;
+    setTimeout(() => {
+      document.getElementById('gaugeFillQ2').style.strokeDashoffset = total - (total * v2 / 5);
+      document.getElementById('gaugeValQ2').textContent = v2;
+      document.getElementById('gaugeFillQ4').style.strokeDashoffset = total - (total * v4 / 5);
+      document.getElementById('gaugeValQ4').textContent = v4;
+    }, 200);
+
+    // Bar chart Q6
+    const allOptions = [
+      'Monitoreo en tiempo real',
+      'Uso desde celular',
+      'Tablero visual centralizado',
+      'Detección temprana de problemas',
+      'Otro'
+    ];
+    const selected6 = answers[6] || [];
+    const container = document.getElementById('barChartQ6');
+    container.innerHTML = '';
+    allOptions.forEach(opt => {
+      const isSelected = selected6.includes(opt);
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-row-label">${opt}${isSelected ? ' ✓' : ''}</div>
+        <div class="bar-bg">
+          <div class="bar-fill" style="background:${isSelected ? '#1A3A2A' : '#C8C8C0'};opacity:${isSelected ? 1 : 0.4}" data-pct="${isSelected ? 100 : 20}"></div>
+        </div>`;
+      container.appendChild(row);
+    });
+    setTimeout(() => {
+      container.querySelectorAll('.bar-fill').forEach(b => { b.style.width = b.dataset.pct + '%'; });
+    }, 500);
+
+    // Pill Q5
+    const q5 = answers[5] || '';
+    const pill = document.getElementById('pillQ5');
+    let cls = 'pill-gray';
+    if (q5.includes('sí') || q5.includes('si')) cls = 'pill-green';
+    else if (q5 === 'No sé') cls = 'pill-yellow';
+    pill.className = 'pill-result ' + cls;
+    pill.textContent = q5;
+
+    // Q7 suggestion
+    const sug = answers[7] ? answers[7].trim() : '';
+    if (sug) {
+      document.getElementById('q7card').style.display = 'block';
+      document.getElementById('suggestionText').textContent = '"' + sug + '"';
+    }
+  }
+
+  function submitForm() {
+    const missing = [1,2,3,4,5,6].filter(q => {
+      const a = answers[q];
+      return a === undefined || (Array.isArray(a) && a.length === 0) || a === '';
+    });
+    if (missing.length > 0) {
+      document.getElementById('errorMsg').style.display = 'block';
+      document.getElementById('card-' + missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('formBody').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('formBody').style.display = 'none';
+      document.getElementById('thankyou').style.display = 'block';
+      renderCharts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 300);
+  }
+</script>
+</body>
+</html>
